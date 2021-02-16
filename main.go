@@ -51,18 +51,8 @@ func main() {
 	timeConverter := newTimeConverter()
 	formatter := newTimeFormatter()
 
-	// TODO: Move into separate function.
-	readers := make([]io.Reader, len(CLI.Paths))
-	for i, p := range CLI.Paths {
-		readers[i] = p
-	}
-	scanner := bufio.NewScanner(bufio.NewReader(io.MultiReader(readers...)))
-
-	// TODO: Move into a function.
-	output := bufio.NewWriter(os.Stdout)
-	if CLI.Unbuffered {
-		output = bufio.NewWriterSize(output, 0)
-	}
+	scanner := newScanner()
+	output := newBufferedWriter(os.Stdout)
 	defer output.Flush()
 
 	splitter := &numberSplitter{}
@@ -95,6 +85,21 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		fatalLn("Invalid input:", err)
 	}
+}
+
+func newBufferedWriter(out io.Writer) *bufio.Writer {
+	if CLI.Unbuffered {
+		return bufio.NewWriterSize(out, 0)
+	}
+	return bufio.NewWriter(out)
+}
+
+func newScanner() *bufio.Scanner {
+	readers := make([]io.Reader, len(CLI.Paths))
+	for i, p := range CLI.Paths {
+		readers[i] = p
+	}
+	return bufio.NewScanner(bufio.NewReader(io.MultiReader(readers...)))
 }
 
 type timeRange struct {
